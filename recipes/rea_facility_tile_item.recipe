@@ -1,7 +1,0 @@
-{
-  "input" : [
-    { "item" : "money", "count" : 1 }
-  ],
-  "output" : { "item" : "rea_facility_tile_item", "count" : 1 },
-  "groups" : [ "plain", "other", "all" ]
-}

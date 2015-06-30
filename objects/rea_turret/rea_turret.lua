@@ -1,235 +1,487 @@
---[ Experimental -- Not tested yet, should work -- @Kayuko]
+-- Needed Json Params: 
+-- <int> turLevel, 
+-- <float> turFireTime, 
+-- <int> turConsumeEnergy, 
+-- <path> turFireSound,
+-- <int> turDamPerShot, 
+-- <float> turFireSpeed, 
+-- <int / 1> turSpread, 
+-- <projectileName> projToFire, 
+-- <effectName> turDebuff
+-- @Kayuko
 
-function init(virtual)
-  if not virtual then
-    self.state = stateMachine.create({
-      "attackState",
-      "scanState"
-    })
+function init(args)
+  --Bunch of parameters
+  self.baseOffset = entity.configParameter("baseOffset")
+  self.tipOffset = entity.configParameter("tipOffset") --This is offset from BASE position, not object origin
 
-    entity.setAnimationState("movement", "idle")
-    entity.setInteractive(false)
-    entity.setAllOutboundNodes(false)
-  end
+  self.targetRange = entity.configParameter("targetRange")
+  self.targetCooldown = entity.configParameter("targetCooldown")
+  self.targetAngleRange = entity.configParameter("targetAngleRange")
+  self.maxTrackingYVel = entity.configParameter("maxTrackingYVel")
+  self.targetOffset = entity.configParameter("targetOffset")
+  self.minTargetRange = entity.configParameter("minTargetRange")
+
+  self.rotationRange = entity.configParameter("rotationRange")
+  self.rotationTime = entity.configParameter("rotationTime")
+
+  self.letGoCooldown = entity.configParameter("letGoCooldown")
+
+  self.energy = entity.configParameter("energy")
+  self.maxEnergy = self.energy.baseEnergy
+
+  self.state = stateMachine.create({
+    "deadState",
+    "attackState",
+    "scanState"
+  })
+  self.active = true
+  self.isActive = nil
+
+  entity.setAnimationState("movement", "idle")
+  entity.setInteractive(true)
+  --entity.setAllOutboundNodes(false)
+
+  if storage.energy == nil then setEnergy(self.maxEnergy) end
+  
+  --checkInboundNode()
 end
 
 --------------------------------------------------------------------------------
+--stateMachine update per deltatime
 function update(dt)
   self.state.update(dt)
 end
 
 --------------------------------------------------------------------------------
-function toAbsolutePosition(offset)
-  if entity.direction() > 0 then
-    return vec2.add(entity.position(), offset)
+--Enable wiring
+
+function onNodeConnectionChange(args)
+  if entity.isInboundNodeConnected(0) then
+    onInboundNodeChange({ level = entity.getInboundNodeLevel(0) })
+  end
+end
+
+function onInboundNodeChange(args)
+  if args.level then
+    isActive = true
   else
-    return vec2.sub(entity.position(), offset)
+    isActive = false
+  end
+end
+--------------------------------------------------------------------------------
+
+function getBasePosition()
+  return entity.toAbsolutePosition(self.baseOffset)
+end
+
+--------------------------------------------------------------------------------
+
+function visibleTarget(targetId)
+  local targetPosition = targetPos(targetId)
+  local basePosition = getBasePosition()
+  local angleRange = self.targetAngleRange * math.pi / 180;
+
+  --Check if target angle is in angle range
+  local targetVector = world.distance(targetPosition, basePosition)
+  local targetAngle = directionTransformAngle(math.atan2(targetVector[2], targetVector[1]))
+  if targetAngle < -angleRange or targetAngle > angleRange then
+    return false
+  end
+  
+  --Check for blocks in the way
+  local blocks = world.collisionBlocksAlongLine(basePosition, targetPosition, "Dynamic", 1)
+  if #blocks > 0 then
+    return false
+  end
+  
+  return true
+end
+
+
+function validTarget(targetId)
+  local selfId = entity.id()
+  
+  --Does it exist?
+  if world.entityExists(targetId) == false then
+    return false
+  end
+  
+  --Is it dead yet
+  local targetHealth = world.entityHealth(targetId)
+  if targetHealth ~= nil and targetHealth[1] <= 0 then
+    return false
+  end
+  
+  --Is it in range and visible
+  local direction = entity.direction()
+  local distance = world.magnitude(targetPos(targetId), getBasePosition())
+  
+  if distance < self.targetRange and distance > self.minTargetRange and visibleTarget(targetId) then
+    return true
+  else
+    return false
   end
 end
 
 --------------------------------------------------------------------------------
-function getBasePosition()
-  local baseOffset = entity.configParameter("baseOffset")
-  return toAbsolutePosition(baseOffset)
+
+function directionTransformAngle(angle)
+  local direction = 1
+  if entity.direction() < 0 then
+    direction = -1
+  end
+  local angleVec = {direction * math.cos(angle), math.sin(angle)}
+  return math.atan2(angleVec[2], angleVec[1])
 end
 
 --------------------------------------------------------------------------------
-function setAimAngle(basePosition, targetAimAngle)
-  entity.rotateGroup("gun", -targetAimAngle)
 
-  local tipOffset = entity.configParameter("tipOffset")
-  local tipPosition = toAbsolutePosition(tipOffset)
+function potentialTargets()  
+  --Gets all valid player + monster targets
+  local playerIds = world.entityQuery(getBasePosition(), self.targetRange, { includedTypes = {"player"} })
+  local monsterIds = world.entityQuery(getBasePosition(), self.targetRange, { includedTypes = {"monster"} })
 
-  local aimAngle = entity.currentRotationAngle("gun")
-  local facingDirection = entity.direction()
-  local aimVector = vec2.rotate(world.distance(tipPosition, basePosition), aimAngle * facingDirection)
-
-  tipPosition = vec2.add(basePosition, aimVector)
-  tipOffset = world.distance(tipPosition, entity.position())
-
-  aimVector = vec2.norm(aimVector)
-
-  local laserVector = vec2.mul(aimVector, entity.configParameter("maxLaserLength"))
-  local laserEndpoint = vec2.add({ tipPosition[1], tipPosition[2] }, laserVector)
-
-  local blocks = world.collisionBlocksAlongLine(tipPosition, laserEndpoint, "Dynamic", 1)
-  if #blocks > 0 then
-    local blockPosition = blocks[1]
-    local delta = world.distance(blockPosition, tipPosition)
-
-    local x0, x1 = blockPosition[1], blockPosition[1] + 1
-    if delta[1] < 0 then x0, x1 = x1, x0 end
-
-    local y0, y1 = blockPosition[2], blockPosition[2] + 1
-    if delta[2] < 0 then y0, y1 = y1, y0 end
-
-    local xIntersection = vec2.intersect(tipPosition, laserEndpoint, { x0, y0 }, { x0, y1 })
-    local yIntersection = vec2.intersect(tipPosition, laserEndpoint, { x0, y0 }, { x1, y0 })
-
-    if yIntersection == nil then
-      if xIntersection ~= nil then laserEndpoint = xIntersection end
-    elseif xIntersection == nil then
-      if yIntersection ~= nil then laserEndpoint = yIntersection end
-    else
-      local xSegment = world.distance(xIntersection, tipPosition)
-      local ySegment = world.distance(yIntersection, tipPosition)
-      if world.magnitude(xSegment) > world.magnitude(ySegment) then
-        laserEndpoint = yIntersection
-      else
-        laserEndpoint = xIntersection
-      end
+  for i,playerId in ipairs(playerIds) do
+    if entity.isValidTarget(playerId) then
+      monsterIds[#monsterIds+1] = playerId
     end
   end
+  
+  return monsterIds
+end
 
-  world.debugLine(tipPosition, laserEndpoint, "red")
 
-  return -aimAngle, tipPosition, laserEndpoint
+--------------------------------------------------------------------------------
+function findTarget()
+  local selfId = entity.id()
+  
+  local minDistance = self.targetRange
+  local winnerEntity = 0
+  
+  local entityIds = potentialTargets()
+  
+  for i, entityId in ipairs(entityIds) do
+    
+    local distance = world.magnitude(getBasePosition(), targetPos(entityId))
+  
+    if validTarget(entityId) then
+      winnerEntity = entityId
+      minDistance = distance
+    end
+  end
+  
+  return winnerEntity
+end
+
+--------------------------------------------------------------------------------
+
+function setActive(active)
+  self.active = active
+end
+
+--function isActive()
+--  if entity.isInboundNodeConnected(0) and not entity.getInboundNodeLevel(0) then
+--    return false
+--  else
+--    return self.gunStats ~= false
+--  end
+--end 
+
+function setEnergy(energy)
+  storage.energy = energy
+
+  local level = entity.configParameter("turLevel") or 1
+  self.maxEnergy = self.energy.baseEnergy + root.evalFunction("npcLevelEnergyIncrease", level) * self.energy.baseEnergy
+
+  if storage.energy > self.maxEnergy then storage.energy = self.maxEnergy end
+  
+  local animationState = "full"
+  
+  if energy / self.maxEnergy <= 0.75 then animationState = "high" end
+  if energy / self.maxEnergy <= 0.5 then animationState = "medium" end
+  if energy / self.maxEnergy <= 0.25 then animationState = "low" end
+  if energy / self.maxEnergy <= 0 then animationState = "none" end
+
+  entity.scaleGroup("energy", {energy / self.maxEnergy * 11, 1})
+  entity.scaleGroup("energyv", {1, energy / self.maxEnergy * 11})
+  
+  entity.setAnimationState("energy", animationState)
+end
+
+function consumeEnergy(amount)
+  if storage.energy - amount < 0 then
+    return false 
+  end
+
+  setEnergy(storage.energy - amount)
+  return true
+end
+
+function regenEnergy()
+  local energyRegenFactor = self.energy.energyRegen / self.energy.baseEnergy
+  local energy = storage.energy + energyRegenFactor * self.maxEnergy * script.updateDt()
+  setEnergy(energy)
+end
+
+--------------------------------------------------------------------------------
+
+function targetPos(entityId)
+  local position = world.entityPosition(entityId)
+  --Until I can get the center of a target collision poly
+  position[1] = position[1] + self.targetOffset[1]
+  position[2] = position[2] + self.targetOffset[2]
+  return position
+end
+
+function dotProduct(firstVector, secondVector)
+  return firstVector[1] * secondVector[1] + firstVector[2] * secondVector[2]
+end
+
+function predictedPosition(targetPosition, basePosition, targetVel, bulletSpeed)
+  local targetVector = world.distance(targetPosition, basePosition)
+  local bs = bulletSpeed
+  local dotVectorVel = dotProduct(targetVector, targetVel)
+  local vector2 = dotProduct(targetVector, targetVector)
+  local vel2 = dotProduct(targetVel, targetVel)
+  
+  --If the answer is a complex number, for the love of god don't continue
+  if ((2*dotVectorVel) * (2*dotVectorVel)) - (4 * (vel2 - bs * bs) * vector2) < 0 then
+    return targetPosition
+  end
+  
+  local timesToHit = {} --Gets two values from solving quadratic equation
+  --Quadratic formula up in dis
+  timesToHit[1] = (-2 * dotVectorVel + math.sqrt((2*dotVectorVel) * (2*dotVectorVel) - 4*(vel2 - bs * bs) * vector2)) / (2 * (vel2 - bs * bs))
+  timesToHit[2] = (-2 * dotVectorVel - math.sqrt((2*dotVectorVel) * (2*dotVectorVel) - 4*(vel2 - bs * bs) * vector2)) / (2 * (vel2 - bs * bs))
+  
+  --Find the nearest lowest positive solution
+  local timeToHit = 0
+  if timesToHit[1] > 0 and (timesToHit[1] <= timesToHit[2] or timesToHit[2] < 0) then timeToHit = timesToHit[1] end
+  if timesToHit[2] > 0 and (timesToHit[2] <= timesToHit[1] or timesToHit[1] < 0) then timeToHit = timesToHit[2] end
+  
+  local predictedPos = vec2.add(targetPosition, vec2.mul(targetVel, timeToHit))
+  return predictedPos
+end
+
+--------------------------------------------------------------------------------
+
+deadState = {}
+
+function deadState.enter()
+  if not isActive then
+    return {}
+  end
+end
+
+function deadState.enteringState(stateData)
+  entity.setAnimationState("movement", "dead")
+  local rotationRange = self.rotationRange * math.pi / 180;
+  entity.rotateGroup("gun", -rotationRange)
+  entity.setAllOutboundNodes(false)
+
+  setEnergy(0)
+end
+
+function deadState.update(dt, stateData)
+  local rotationRange = self.rotationRange * math.pi / 180;
+  entity.rotateGroup("gun", -rotationRange)
+
+  if isActive then
+    return true
+  end
+
+  return false
+end
+
+function deadState.leavingState(stateData)
+  entity.playSound("powerUp")
+  self.state.pickState()
 end
 
 --------------------------------------------------------------------------------
 scanState = {}
 
 function scanState.enter()
-  return {
-    timer = -entity.configParameter("rotationPauseTime"),
-    direction = 1
-  }
+  if isActive then
+    return {
+      timer = 0,
+      targetCooldown = self.targetCooldown,
+      targetId = nil
+    }
+  end
 end
 
 function scanState.enteringState(stateData)
-  entity.setAnimationState("beam", "visible")
+  entity.setAnimationState("movement", "idle")
+  entity.setAllOutboundNodes(false)
 end
 
 function scanState.update(dt, stateData)
-  local rotationRange = vec2.mul(entity.configParameter("rotationRange"), math.pi / 180)
-  local rotationTime = entity.configParameter("rotationTime")
-
-  local angle = util.easeInOutQuad(
-    util.clamp(stateData.timer, 0, rotationTime) / rotationTime,
-    rotationRange[1],
-    rotationRange[2]
-  )
-
-  if stateData.direction < 0 then
-    angle = rotationRange[2] - angle
-  end
-
-  if stateData.timer < 0 or stateData.timer > rotationTime then
-    entity.setAnimationState("movement", "idle")
-  else
-    entity.setAnimationState("movement", "idle")
-  end
-
-  local basePosition = getBasePosition()
-  local aimAngle, laserOrigin, laserEndpoint = setAimAngle(basePosition, angle)
-
-  local length = world.magnitude(laserOrigin, laserEndpoint)
-  entity.scaleGroup("beam", { length, 1.0 })
-
-  local targetId = scanState.findTarget(laserOrigin, laserEndpoint)
-  if targetId ~= 0 then
-    self.state.pickState(targetId)
+  if not isActive then
     return true
   end
+  
+  regenEnergy()
 
-  stateData.timer = stateData.timer + dt
-  if stateData.timer > rotationTime then
-    stateData.timer = -entity.configParameter("rotationPauseTime")
-    stateData.direction = -stateData.direction
+  scanState.rotateGun(stateData)
+  
+  local targetEntity = scanState.scanForTargets(stateData)
+  if targetEntity then
+      stateData.targetId = targetEntity
+      return true
   end
 
   return false
 end
 
-function scanState.leavingState(stateData)
-  entity.setAnimationState("beam", "invisible")
+function scanState.rotateGun(stateData)
+  local rotationRange = self.rotationRange * math.pi / 180;
+  local angle = rotationRange * math.sin(stateData.timer / self.rotationTime * math.pi * 2)
+  entity.rotateGroup("gun", angle)
+
+  stateData.timer = stateData.timer + script.updateDt()
+  if stateData.timer > self.rotationTime then
+    stateData.timer = 0
+  end
 end
 
-function scanState.findTarget(startPosition, endPosition)
-  local selfId = entity.id()
-
-  local entityIds = world.entityLineQuery(startPosition, endPosition, { includedTypes = {"player"}, withoutEntityId = selfId })
-  for i, entityId in ipairs(entityIds) do
-    if entityId ~= selfId then
-      return entityId
+function scanState.scanForTargets(stateData)
+  --Look for targets
+  if stateData.targetCooldown <= 0 then
+    local targetEntity = findTarget()
+    if targetEntity ~= 0 then
+        return targetEntity
     end
+    stateData.targetCooldown = self.targetCooldown
   end
 
-  return 0
+  stateData.targetCooldown = stateData.targetCooldown - script.updateDt()
+  if stateData.targetCooldown < 0 then
+    stateData.targetCooldown = 0
+  end
+  return false
+end
+
+function scanState.leavingState(stateData)
+  if storage.energy <= 0 or isActive == false then
+    entity.playSound("powerDown")
+  end
+  self.state.pickState(stateData.targetId)
 end
 
 --------------------------------------------------------------------------------
 attackState = {}
 
 function attackState.enterWith(targetId)
-  entity.rotateGroup("gun", entity.currentRotationAngle("gun"))
+  if targetId ~= nil and world.entityPosition(targetId) ~= nil then
+    return {
+      fireTimer = 0,
+      targetId = targetId,
+      lastPosition = targetPos(targetId),
+      letGoTimer = 0
+    }
+  end
+end
+
+function attackState.enteringState(stateData)
+  entity.playSound("foundTarget")
+  
   entity.setAnimationState("movement", "attack")
   entity.setAllOutboundNodes(true)
-  return {
-    timer = 0,
-    fireTimer = 0,
-    fireOffsetIndex = 1,
-    targetId = targetId
-  }
 end
 
 function attackState.update(dt, stateData)
-  local targetPosition = world.entityPosition(stateData.targetId)
-  if targetPosition == nil then
-    entity.setAnimationState("movement", "idle")
-    entity.setAllOutboundNodes(false)
+  if not isActive then
     return true
   end
 
-  local basePosition = getBasePosition()
-  local toTarget = world.distance(targetPosition, basePosition)
+  regenEnergy()
+  
+  local haveTarget = attackState.haveValidTarget(stateData)
+  
+  if haveTarget then
 
-  local desiredAimAngle = vec2.angle(toTarget) * entity.direction()
-  if desiredAimAngle > math.pi then desiredAimAngle = 2 * math.pi - desiredAimAngle end
+    attackState.followTarget(stateData)
+    
+    if stateData.fireTimer >= entity.configParameter("turFireTime") and consumeEnergy(entity.configParameter("turConsumeEnergy")) then
 
-  local rotationRange = vec2.mul(entity.configParameter("rotationRange"), math.pi / 180)
-  desiredAimAngle = util.clamp(desiredAimAngle, rotationRange[1], rotationRange[2])
+      attackState.fire(stateData)
 
-  local aimAngle, laserOrigin, laserEndpoint = setAimAngle(basePosition, desiredAimAngle)
-
-  if not attackState.isVisible(laserOrigin, laserEndpoint, stateData.targetId) then
-    entity.rotateGroup("gun", entity.currentRotationAngle("gun"))
-
-    stateData.timer = stateData.timer + dt
-  else
-    stateData.fireTimer = stateData.fireTimer - dt
-    if stateData.fireTimer <= 0 then
-      local fireDirection = vec2.norm(vec2.sub(laserEndpoint, laserOrigin))
-      local fireOffsets = entity.configParameter("fireOffsets")
-      local fireOffset = fireOffsets[stateData.fireOffsetIndex]
-      local orthoDirection = { -fireDirection[2], fireDirection[1] }
-      local firePosition = vec2.add(laserOrigin, vec2.mul(orthoDirection, fireOffset))
-
-      world.spawnProjectile("bullet-1", firePosition, entity.id(), fireDirection)
-
-      stateData.fireTimer = entity.configParameter("fireCooldown")
-      stateData.fireOffsetIndex = util.incWrap(stateData.fireOffsetIndex, #fireOffsets)
+      stateData.fireTimer = stateData.fireTimer - entity.configParameter("turFireTime")
     end
-
-    stateData.timer = 0
-  end
-
-  if stateData.timer > entity.configParameter("targetHoldTime") then
-    entity.setAnimationState("movement", "idle")
-    entity.setAllOutboundNodes(false)
-    return true
+    
+    stateData.fireTimer = stateData.fireTimer + dt
+  elseif stateData.letGoTimer > self.letGoCooldown or world.entityPosition == nil then
+      return true
   end
 
   return false
 end
 
-function attackState.isVisible(startPosition, endPosition, targetId)
-  local entityIds = world.entityLineQuery(startPosition, endPosition, {includedTypes = {"player"}})
-  for i, entityId in ipairs(entityIds) do
-    if entityId == targetId then
-      return true
+function attackState.fire(stateData)
+  local direction = entity.direction()
+  
+  local aimAngle = entity.currentRotationAngle("gun")
+
+  local tipPosition = attackState.tipPosition(stateData, aimAngle)
+  local aimVector = {direction * math.cos(aimAngle), math.sin(aimAngle)}
+  
+  if entity.configParameter("turSpread") == 1 then
+    world.spawnProjectile(entity.configParameter("projToFire"), tipPosition, entity.id(), aimVector, false, {power = entity.configParameter("turDamPerShot"), speed = entity.configParameter("turFireSpeed"), statusEffects = entity.configParameter("turDebuff"), damageType = "IgnoresDef"})
+  elseif entity.configParameter("turSpread") > 1 then
+    for i = 0, entity.configParameter("turSpread") do
+      local angleOffset = (math.random() * 4 - 2) / 100 * entity.configParameter("turSpread");
+      local newAngle = aimAngle + angleOffset
+      aimVector = {direction * math.cos(newAngle), math.sin(newAngle)}
+      world.spawnProjectile(entity.configParameter("projToFire"), tipPosition, entity.id(), aimVector, false, {power = entity.configParameter("turDamPerShot") / entity.configParameter("turSpread"), speed = entity.configParameter("turFireSpeed"), statusEffects = entity.configParameter("turDebuff"), damageType = "IgnoresDef"})
     end
   end
+end
 
+function attackState.haveValidTarget(stateData)
+  if validTarget(stateData.targetId) then
+    stateData.letGoTimer = 0
+    return true
+  end
+  stateData.letGoTimer = stateData.letGoTimer + script.updateDt()
   return false
+end
+
+function attackState.tipPosition(stateData, aimAngle)
+  local tipOffset = {self.tipOffset[1], self.tipOffset[2]}
+  if entity.direction() < 0 then tipOffset[2] = tipOffset[2] + 0.125 end --Most bullets are odd height, this fixes an offset issue where their origin is slightly below middle
+  tipOffset = vec2.rotate(tipOffset, aimAngle)
+  tipOffset[1] = entity.direction() * tipOffset[1]
+
+  return vec2.add(getBasePosition(), tipOffset)
+end
+
+function attackState.targetVelocity(stateData)
+  local targetPosition = targetPos(stateData.targetId)
+  local deltaPos = {targetPosition[1] - stateData.lastPosition[1], targetPosition[2] - stateData.lastPosition[2]}
+  stateData.lastPosition = targetPosition
+  return vec2.div(deltaPos, script.updateDt())
+end
+
+function attackState.followTarget(stateData)
+  --Make it follow the target's predicted position
+  local targetVelocity = attackState.targetVelocity(stateData)
+  targetVelocity[2] = math.max(math.min(targetVelocity[2], self.maxTrackingYVel), -self.maxTrackingYVel) --Don't track the Y velocity too much because of jumping
+  local predictedPos = predictedPosition(targetPos(stateData.targetId), getBasePosition(), targetVelocity, entity.configParameter("turFireSpeed"))
+  
+  local targetVector = world.distance(predictedPos, getBasePosition())
+  angle = directionTransformAngle(math.atan2(targetVector[2], targetVector[1]))
+  angle = math.max(math.min(angle, self.targetAngleRange), -self.targetAngleRange)
+  
+  entity.rotateGroup("gun", angle)
+end
+
+function attackState.leavingState(stateData)
+  if storage.energy <= 0 or isActive == false then
+    entity.playSound("powerDown")
+  else
+    entity.playSound("scan")
+  end
+  self.state.pickState()
 end

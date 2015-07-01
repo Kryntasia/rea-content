@@ -2,7 +2,10 @@
 
 Features at the moment:
 
-- Custom building block (Pipe-style)
+- Custom blocks
+	-Facility pipe-type block
+	-Cushion-block
+	-Wool-blocks
 - Anti-player Turret
 - Projectile triggered switch
 

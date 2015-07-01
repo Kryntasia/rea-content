@@ -1,0 +1,23 @@
+{
+  "materialId" : 44001,
+  "materialName" : "reas_cushionblock",
+  "particleColor" : [148, 148, 148, 255],
+  "itemDrop" : "reas_cushionblock",
+  "description" : "Cushions in disguise.",
+  "shortdescription" : "Cushion Block",
+  "glitchDescription" : "Statement. Cushion block that changes..",
+  "floranDescription" : "Cushionsss.",
+  "footstepSound" : "/sfx/blocks/footstep_sand.wav",
+  "health" : 2,
+  "category": "materials",
+
+  "renderTemplate" : "/tiles/classicmaterialtemplate.config",
+  "renderParameters" : {
+    "texture" : "reas_cushionblock.png",
+    "variants" : 5,
+    "lightTransparent" : false,
+    "occludesBelow" : true,
+    "multiColored" : false,
+    "zLevel" : 0
+  }
+}

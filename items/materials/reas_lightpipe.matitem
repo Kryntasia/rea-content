@@ -1,0 +1,12 @@
+{
+  "itemName" : "reas_lightpipe",
+  "rarity" : "Common",
+  "inventoryIcon" : "reas_lightpipeicon.png",
+  "dropCollision" : [-2.5, -2.0, 2.5, 2.0],
+  "description" : "A light pipe.",
+  "shortdescription" : "Light Pipe",
+  "glitchdescription" : "Statement. A light pipe.",
+  "florandescription" : "Light pipe.",
+
+  "materialId" : 44002
+}

@@ -1,0 +1,12 @@
+{
+  "itemName" : "reas_woolblock",
+  "rarity" : "Common",
+  "inventoryIcon" : "reas_woolblock.png",
+  "dropCollision" : [-2.5, -2.0, 2.5, 2.0],
+  "description" : "A floofy building material.",
+  "shortdescription" : "Wool Block",
+  "glitchDescription" : "Statement. Floofy block.",
+  "floranDescription" : "Floofynesssss.",
+
+  "materialId" : 44000
+}

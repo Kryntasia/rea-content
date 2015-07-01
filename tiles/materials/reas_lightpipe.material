@@ -1,0 +1,25 @@
+
+{
+  "materialId" : 44002,
+  "materialName" : "reas_lightpipe",
+  "frames" : "reas_lightpipe.png",
+  "particleColor" : [200, 200, 200, 255],
+  "itemDrop" : "reas_lightpipe",
+  "description" : "A light pipe.",
+  "shortdescription" : "Light Pipe",
+  "glitchDescription" : "Statement. A light pipe.",
+  "floranDescription" : "Light pipe.",
+  "footstepSound" : "/sfx/blocks/footstep_composite.wav",
+  "health" : 32,
+  "category": "supports",
+
+  "renderTemplate" : "/tiles/girdertemplate.config",
+  "renderParameters" : {
+    "texture" : "reas_lightpipe.png",
+    "variants" : 5,
+    "lightTransparent" : false,
+    "occludesBelow" : false,
+    "multiColored" : true,
+    "zLevel" : 100
+  }
+}

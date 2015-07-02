@@ -1,0 +1,23 @@
+{
+  "materialId" : 44000,
+  "materialName" : "reas_woolblock",
+  "particleColor" : [148, 148, 148, 255],
+  "itemDrop" : "reas_woolblock",
+  "description" : "A floofy building material.",
+  "shortdescription" : "Wool Block",
+  "glitchDescription" : "Statement. Floofy block.",
+  "floranDescription" : "Floofynesssss.",
+  "footstepSound" : "/sfx/blocks/footstep_sand.wav",
+  "health" : 2,
+  "category": "materials",
+
+  "renderTemplate" : "/tiles/classicmaterialtemplate.config",
+  "renderParameters" : {
+    "texture" : "reas_woolblock.png",
+    "variants" : 5,
+    "lightTransparent" : false,
+    "occludesBelow" : true,
+    "multiColored" : true,
+    "zLevel" : 0
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "itemName" : "reas_cushionblock",
+  "rarity" : "Common",
+  "inventoryIcon" : "reas_cushionblock.png",
+  "dropCollision" : [-2.5, -2.0, 2.5, 2.0],
+  "description" : "Cushions in disguise..",
+  "shortdescription" : "Cushion Block",
+  "glitchDescription" : "Statement. Cushion block that changes.",
+  "floranDescription" : "Cushionsss.",
+
+  "materialId" : 44001
+}

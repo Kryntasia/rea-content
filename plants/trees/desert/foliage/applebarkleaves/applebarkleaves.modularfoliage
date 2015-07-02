@@ -1,0 +1,80 @@
+{
+  "name" : "applebarkleaves",
+  "shape" : "desert",
+
+  "dropConfig" : {
+    "drops" : [
+      [ { "item" : "sapling" } ]
+    ],
+    
+    "particles" : {
+      "breakTree" : {
+        "density" : 3,
+        "options" : [
+          {
+            "color" : [75, 75, 25],
+            "timeToLive" : 10
+          },
+          {
+            "color" : [99, 105, 36],
+            "timeToLive" : 10
+          },
+          {
+            "color" : [135, 155, 50],
+            "timeToLive" : 10
+          }
+        ]
+      },
+      "hitGround" : {
+        "density" : 3,
+        "options" : [
+          {
+            "color" : [75, 75, 25],
+            "timeToLive" : 10,
+            "initial" : "upwards"
+          },
+          {
+            "color" : [99, 105, 36],
+            "timeToLive" : 10,
+            "initial" : "upwards"
+          },
+          {
+            "color" : [135, 155, 50],
+            "timeToLive" : 10,
+            "initial" : "upwards"
+          }
+        ]
+      }
+    }
+  },
+
+  "crownLeaves" : {
+    "crown1" : {
+      "image" : "",
+      "backimage" : "crown1.png",
+      "attachment" : {
+        "bx" : -54,
+        "by" : -5
+      }
+    },
+    "crown2" : {
+      "image" : "",
+      "backimage" : "crown2.png",
+      "attachment" : {
+        "bx" : -53,
+        "by" : -8
+
+      }
+    },
+    "crown3" : {
+      "image" : "",
+      "backimage" : "crown3.png",
+      "attachment" : {
+        "bx" : -54,
+        "by" : -5
+      }
+    }
+  },
+  "branchLeaves" : {
+  }
+}

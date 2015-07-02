@@ -1,0 +1,12 @@
+{
+  "itemName" : "reas_applebarkplanks",
+  "rarity" : "Common",
+  "inventoryIcon" : "reas_applebarkplanks.png",
+  "dropCollision" : [-2.5, -2.0, 2.5, 2.0],
+  "description" : "I think i got a splinter..",
+  "shortdescription" : "Applebark Planks",
+  "glitchDescription" : "Statement. Planks of red wood.",
+  "floranDescription" : "Tree flessh.",
+
+  "materialId" : 44004
+}

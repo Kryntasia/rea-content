@@ -1,0 +1,23 @@
+{
+  "materialId" : 44003,
+  "materialName" : "reas_applebarkwood",
+  "particleColor" : [148, 148, 148, 255],
+  "itemDrop" : "reas_applebarkwood",
+  "description" : "A log of horrid looking wood.",
+  "shortdescription" : "Unrefined Applebark Wood",
+  "glitchDescription" : "Statement. This wood is renowned for its rich red color.",
+  "floranDescription" : "Bleh.. Wood Ssmells of fruit.",
+  "footstepSound" : "/sfx/blocks/footstep_sand.wav",
+  "health" : 2,
+  "category": "materials",
+
+  "renderTemplate" : "/tiles/classicmaterialtemplate.config",
+  "renderParameters" : {
+    "texture" : "reas_applebarkwood.png",
+    "variants" : 5,
+    "lightTransparent" : false,
+    "occludesBelow" : true,
+    "multiColored" : false,
+    "zLevel" : 0
+  }
+}

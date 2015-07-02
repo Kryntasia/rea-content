@@ -1,3 +1,5 @@
 [
-{"op" : "add", "path" : "/defaultBlueprints/tier1/-", "value" : {"item" : "rea_facility_tile_item"}}
+{"op" : "add", "path" : "/defaultBlueprints/tier1/-", "value" : {"item" : "rea_facility_tile_item"},
+{"op" : "add", "path" : "/defaultBlueprints/tier1/-", "value" : {"item" : "reas_applebarkwood"},
+{"op" : "add", "path" : "/defaultBlueprints/tier1/-", "value" : {"item" : "reas_applebarkplanks"}
 ]

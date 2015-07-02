@@ -1,0 +1,11 @@
+{
+  "itemName" : "reas_applebarkwood",
+  "rarity" : "Common",
+  "inventoryIcon" : "reas_applebarkwood.png",
+  "dropCollision" : [-2.5, -2.0, 2.5, 2.0],
+  "description" : "Rough and unrefined, this wood looks freshly chopped.",
+  "shortdescription" : "Unrefined Wood",
+  "glitchdescription" : "Statement. Unrefined wood.",
+  "florandescription" : "Unssstabbed wood.",
+  "materialId" : 44003
+}

@@ -1,0 +1,23 @@
+{
+  "materialId" : 44004,
+  "materialName" : "reas_applebarkplanks",
+  "particleColor" : [148, 148, 148, 255],
+  "itemDrop" : "reas_applebarkplanks",
+  "description" : "Planks of red wood.",
+  "shortdescription" : "Applebark Planks",
+  "glitchDescription" : "Statement. This wood is renowned for its rich red color.",
+  "floranDescription" : "Bleh.. Wood Ssmells of fruit.",
+  "footstepSound" : "/sfx/blocks/footstep_sand.wav",
+  "health" : 2,
+  "category": "materials",
+
+  "renderTemplate" : "/tiles/classicmaterialtemplate.config",
+  "renderParameters" : {
+    "texture" : "reas_applebarkplanks.png",
+    "variants" : 5,
+    "lightTransparent" : false,
+    "occludesBelow" : true,
+    "multiColored" : false,
+    "zLevel" : 0
+  }
+}

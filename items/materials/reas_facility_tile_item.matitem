@@ -1,9 +1,9 @@
 {
-  "itemName" : "rea_facility_tile_item",
+  "itemName" : "reas_facility_tile_item",
   "rarity" : "Common",
-  "inventoryIcon" : "rea_facility_tile_item.png",
+  "inventoryIcon" : "reas_facility_tile_item.png",
   "dropCollision" : [-2.5, -2.0, 2.5, 2.0],
-  "shortdescription" : "REA Facility Tile",
+  "shortdescription" : "REAS Facility Tile",
   "description" : "A block of alien striped wood. Stripey!",
   "glitchdescription" : "Interested. It appears the stripes present in this wood are the result of minerals that repel one another.",
   "florandescription" : "SSssstripey wood. Makess sstripey housse!",

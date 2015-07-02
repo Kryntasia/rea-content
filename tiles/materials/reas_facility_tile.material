@@ -1,9 +1,9 @@
 {
   "materialId" : 9956,
-  "materialName" : "rea_facility_tile",
+  "materialName" : "reas_facility_tile",
   "particleColor" : [194, 194, 194, 255],
-  "itemDrop" : "rea_facility_tile_item",
-  "shortdescription" : "REA Facility Tile",
+  "itemDrop" : "reas_facility_tile_item",
+  "shortdescription" : "REAS Facility Tile",
   "description" : "A heavy pipe.",
   "glitchDescription" : "Statement. A pipe.",
   "floranDescription" : "Pipe!",
@@ -12,9 +12,9 @@
   "health" : 30,
   "category": "supports",
 
-  "renderTemplate" : "/tiles/rea_facility_tile.config",
+  "renderTemplate" : "/tiles/reas_facility_tile.config",
   "renderParameters" : {
-    "texture" : "rea_facility_tile.png",
+    "texture" : "reas_facility_tile.png",
     "variants" : 5,
     "lightTransparent" : false,
     "occludesBelow" : false,

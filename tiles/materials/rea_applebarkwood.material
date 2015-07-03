@@ -6,7 +6,7 @@
   "description" : "A log of horrid looking wood.",
   "shortdescription" : "Unrefined Applebark Wood",
   "glitchDescription" : "Statement. This wood is renowned for its rich red color.",
-  "floranDescription" : "Bleh.. Wood Ssmells of fruit.",
+  "floranDescription" : "Bleh.. Wood ssmells of fruit.",
   "footstepSound" : "/sfx/blocks/footstep_sand.wav",
   "health" : 2,
   "category": "materials",
